@@ -1,0 +1,52 @@
+# Welcome to serverless. Read the docs
+# https://serverless.com/framework/docs/
+
+# Serverless.yml is the configuration the CLI
+# uses to deploy your code to your provider of choice
+
+# The `service` block is the name of the service
+service: serverless-stripe-backend
+
+# Configuration variables
+custom:
+  secrets: ${file(secrets.json)}
+
+# The `provider` block defines where your service will be deployed
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev1
+  #profile: personal
+  region: us-east-2
+  environment:
+    accountId: '#{AWS::AccountId}'
+    region: '#{AWS::Region}'
+    STRIPE_SECRET_KEY: ${self:custom.secrets.stripeSecretKey} # Stripe secret API key
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: "*"
+    - Effect: "Allow"
+      Resource: "*"
+      Action:
+        - "sns:*"
+        - "ses:*"
+
+# The `functions` block defines what code to deploy
+functions:
+  createCharge:
+    handler: functions/createCharge.handler
+    # The `events` block defines how to trigger the handler.createCharge code
+    events:
+      - http:
+          path: charge
+          method: post
+          cors: true
+  notifyCustomer:
+    handler: functions/notifyCustomer.handler
+    events:
+      - sns: orders-topic # created immediately

@@ -1,0 +1,8 @@
+{
+  "Template": {
+    "TemplateName": "MyTemplate",
+    "SubjectPart": "Order Confirmed.",
+    "TextPart": "Dear {{name}},\r\nYour transaction id is: {{transactionId}}.",
+    "HtmlPart": "<h1>Hello {{name}}</h1><p>Your order is placed successfully. Transaction id: {{transactionId}}. Total amount: {{amount}}</p>"
+  }
+}
