@@ -1,43 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-var AWS = require("aws-sdk");
-const sns = new AWS.SNS({ region: 'us-east-2' });
-
-const publishSnsTopic = async (data) => {
-  const params = {
-    Message: JSON.stringify(data),
-    TopicArn: 'arn:aws:sns:us-east-2:205453592122:orders-topic'
-  }
-
-  return new Promise((resolve, reject) => {
-    sns.publish(params, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  });
-}
-
-const generateResponse = (code, payload) => {
-  console.log(payload)
-  return {
-    statusCode: code,
-    headers: {
-        "Content-Type" : "application/json",
-        "Access-Control-Allow-Headers" : "Content-Type",
-        "Access-Control-Allow-Methods" : "OPTIONS,POST",
-        "Access-Control-Allow-Credentials" : true,
-        "Access-Control-Allow-Origin" : "*",
-        "X-Requested-With" : "*"
-    },
-    body: JSON.stringify(payload)
-  }
-}
-
-const verifyOrderAmount = (order, amt) => {
-  return order.items.reduce((accu, item) => accu + item.unitPrice*item.quantity, 0) === amt;
-}
+const utils = require('./utils');
 
 module.exports.handler = (event, context, callback) => {
   console.log('createCharge');
@@ -51,12 +13,12 @@ module.exports.handler = (event, context, callback) => {
   const order = requestBody.order;
   const shipping = requestBody.order.shipping;
 
-  if (verifyOrderAmount(order, amount) === false) {
+  if (utils.verifyOrderAmount(order, amount) === false) {
     console.log("Order amount is modified in transit.");
     let message = {
       message: `Your ordered amount doesn't match with total amount. Order is declined.`,
     };
-    response = generateResponse(400, message);
+    response = utils.generateResponse(400, message);
     //context.fail(JSON.stringify(failResponse));
     return callback(null, response);
   }
@@ -74,26 +36,28 @@ module.exports.handler = (event, context, callback) => {
     order.transactionId = transactionId;
     order.date = new Date().toISOString();
 
-    publishSnsTopic(order).then((data) => {
+    const MAX_RETRIES = 3;
+    const wait = 1000;
+    const topic = 'arn:aws:sns:us-east-2:205453592122:orders-topic'
+    utils.retryPromiseWithDelay(utils.publishSnsTopic(order, topic), MAX_RETRIES, wait).then((data) => {
      console.log('Message published successfully.', data);
     }, (ex) => {
       console.log('Error in publishing Message.');
       console.dir(ex.message);
-      // post the order into error-queue?
     });
 
     let message = {
       message: `Your transaction is successful.`,
       charge,
     };
-    response = generateResponse(200, message);
+    response = utils.generateResponse(200, message);
     callback(null, response);
   }, (ex) => {
     console.log(ex);
     let message = {
       message: ex.message
     };
-    response = generateResponse(500, message);
+    response = utils.generateResponse(500, message);
     callback(null, response);
   });
 
