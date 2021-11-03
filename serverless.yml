@@ -38,15 +38,20 @@ provider:
 
 # The `functions` block defines what code to deploy
 functions:
-  createCharge:
-    handler: functions/createCharge.handler
+  charge:
+    handler: functions/charge.handler
     # The `events` block defines how to trigger the handler.createCharge code
     events:
       - http:
           path: charge
           method: post
           cors: true
-  notifyCustomer:
-    handler: functions/notifyCustomer.handler
+  notify:
+    handler: functions/order.handler
     events:
       - sns: orders-topic # created immediately
+    #onError: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:dlq-topic
+  #error:
+  #  handler: error.handler
+  #  events:
+  #    - sns: dlq-topic # created immediately
