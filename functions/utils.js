@@ -1,13 +1,13 @@
 var AWS = require("aws-sdk");
-const sns = new AWS.SNS({ region: 'us-east-2' })
-const ses = new AWS.SES({ region: 'us-east-2' })
+const sns = new AWS.SNS({ region: `${process.env.region}` })
+const ses = new AWS.SES({ region: `${process.env.region}` })
 
 var documentClient = new AWS.DynamoDB.DocumentClient();
 
-const publishSnsTopic = async (data, topic) => {
+const publishSnsTopic = async (topicArn, data) => {
   const params = {
     Message: JSON.stringify(data),
-    TopicArn: topic
+    TopicArn: topicArn
   }
 
   return new Promise((resolve, reject) => {
@@ -72,13 +72,7 @@ const generateResponse = (code, payload) => {
 /**
  * Util function to return a promise which is resolved in provided milliseconds
  */
-function waitFor(millSeconds) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve();
-    }, millSeconds);
-  });
-}
+const wait = (ms) => new Promise(resolve => setTimeout(() => resolve(), ms));
 
 const retryPromiseWithDelay = async (promise, maxtries, delayTime, retry = 1) => {
   try {
@@ -86,14 +80,14 @@ const retryPromiseWithDelay = async (promise, maxtries, delayTime, retry = 1) =>
     return res;
   } catch (e) {
     if (maxtries < retry) {
-      console.log(`Tried all the ${maxtries} attemps. It couldn't complete...`)
+      console.log(`Tried all the ${maxtries} attemps. It couldn't complete...`);
       return Promise.reject(e);
     }
     console.log('Error occurred.', e.message);
     console.log('retrying attempt: ', retry);
-    console.log('Will retry after : ', retry*delayTime);
+    console.log('Will retry after %d milliseconds: ', retry*delayTime);
     // wait for delayTime amount of time before calling this method again
-    await waitFor(retry*delayTime);
+    await wait(retry*delayTime);
     return retryPromiseWithDelay(promise, maxtries, delayTime, retry + 1);
   }
 }

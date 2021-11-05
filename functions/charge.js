@@ -1,6 +1,10 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const utils = require('./utils');
 
+const MAX_RETRIES = 3;
+const wait = 1000;
+const ORDERS_TOPIC_ARN = `arn:aws:sns:${process.env.region}:${process.env.accountId}:orders-topic`
+
 module.exports.handler = (event, context, callback) => {
   console.log('createCharge');
   console.log(event);
@@ -36,10 +40,7 @@ module.exports.handler = (event, context, callback) => {
     order.transactionId = transactionId;
     order.date = new Date().toISOString();
 
-    const MAX_RETRIES = 3;
-    const wait = 1000;
-    const topic = 'arn:aws:sns:us-east-2:205453592122:orders-topic'
-    utils.retryPromiseWithDelay(utils.publishSnsTopic(order, topic), MAX_RETRIES, wait).then((data) => {
+    utils.retryPromiseWithDelay(utils.publishSnsTopic(ORDERS_TOPIC_ARN, order), MAX_RETRIES, wait).then((data) => {
      console.log('Message published successfully.', data);
     }, (ex) => {
       console.log('Error in publishing Message.');
