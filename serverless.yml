@@ -5,23 +5,25 @@
 # uses to deploy your code to your provider of choice
 
 # The `service` block is the name of the service
-service: serverless-stripe-backend
+service: serverless-ahacurry-backend
 
 # Configuration variables
 custom:
-  secrets: ${file(secrets.json)}
+  application: ${file(application.json)}
 
 # The `provider` block defines where your service will be deployed
 provider:
   name: aws
   runtime: nodejs14.x
-  stage: dev1
+  stage: dev
   #profile: personal
   region: us-east-2
+  timeout: 30 #will be inherited by all functions
   environment:
-    accountId: '#{AWS::AccountId}'
-    region: '#{AWS::Region}'
-    STRIPE_SECRET_KEY: ${self:custom.secrets.stripeSecretKey} # Stripe secret API key
+    accountId: ${aws:accountId}
+    region: ${aws:region}
+    STRIPE_SECRET_KEY: ${self:custom.application.stripeSecretKey} # Stripe secret API key
+    ORDERS_TABLE_NAME: ${self:custom.application.ordersTableName}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -46,7 +48,7 @@ functions:
           path: charge
           method: post
           cors: true
-  notify:
+  order:
     handler: functions/order.handler
     events:
       - sns: orders-topic # created immediately
