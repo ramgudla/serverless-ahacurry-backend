@@ -3,13 +3,17 @@ const utils = require('./utils');
 
 const MAX_RETRIES = 3;
 const wait = 1000;
-const ORDERS_TABLE_NAME = `${process.env.ORDERS_TABLE_NAME}`;
+const ORDERS_TABLE_NAME = process.env.ORDERS_TABLE_NAME;
 
 module.exports.handler = async (event) => {
   let order = JSON.parse(event.Records[0].Sns.Message)
 
   // place order
-  await utils.retryPromiseWithDelay(utils.putItem(ORDERS_TABLE_NAME, order), MAX_RETRIES, wait).then((data) => {
+  var ddParams = {
+    TableName: ORDERS_TABLE_NAME,
+    Item: order
+  };
+  await utils.retryPromiseWithDelay(utils.putItem(ddParams), MAX_RETRIES, wait).then((data) => {
     console.log('Order %s is inserted successfully into table %s', data, ORDERS_TABLE_NAME);
   }, (ex) => {
      console.log('Error in placing order.');
