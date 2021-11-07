@@ -24,6 +24,7 @@ provider:
     region: ${aws:region}
     STRIPE_SECRET_KEY: ${self:custom.application.stripeSecretKey} # Stripe secret API key
     ORDERS_TABLE_NAME: ${self:custom.application.ordersTableName}
+    MENU_TABLE_NAME: ${self:custom.application.menuTableName}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -31,6 +32,7 @@ provider:
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
+        - dynamodb:UpdateItem
       Resource: "*"
     - Effect: "Allow"
       Resource: "*"
@@ -42,12 +44,13 @@ provider:
 functions:
   charge:
     handler: functions/charge.handler
-    # The `events` block defines how to trigger the handler.createCharge code
+    # The `events` block defines how to trigger the charge.handler code
     events:
       - http:
-          path: charge
+          path: api/v1/charge
           method: post
           cors: true
+
   order:
     handler: functions/order.handler
     events:
@@ -57,3 +60,29 @@ functions:
   #  handler: error.handler
   #  events:
   #    - sns: dlq-topic # created immediately
+
+  menu:
+    handler: functions/menu.handler
+    # The `events` block defines how to trigger the menu.handler code
+    events:
+      - http:
+          path: api/v1/menu/{restaurantId}
+          method: get
+          cors: true
+
+  orders:
+    handler: functions/orders.handler
+    # The `events` block defines how to trigger the menu.handler code
+    events:
+      - http:
+          path: api/v1/orders
+          method: get
+          cors: true
+      - http:
+          path: api/v1/orders/{phoneNumber}/{transactionId}
+          method: get
+          cors: true
+      - http:
+          path: api/v1/orders/{phoneNumber}/{transactionId}
+          method: post
+          cors: true
