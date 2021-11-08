@@ -4,3 +4,27 @@
 // https://www.hacksparrow.com/nodejs/exports-vs-module-exports.html
 // aws ses create-template --cli-input-json file:////Users/ramgudla/Desktop/Bugs/serverless-ahacurry-backend/mytemplate.json
 // aws ses update-template --cli-input-json file:////Users/ramgudla/Desktop/Bugs/serverless-ahacurry-backend/mytemplate.json
+
+endpoints:
+  POST - https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/charge
+  GET - https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/menu/{restaurantId}
+  GET - https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders
+  GET - https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders/{phoneNumber}/{transactionId}
+  POST - https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders/{phoneNumber}/{transactionId}
+  POST - https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/caterings
+
+  // Update order
+  $ curl -vvv -X POST https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders/+919000143956/ch_3JsotASBJknLCmry1sSKUat9 -d '{
+       "attributes":{
+          "status":"Completed"
+       }
+    }'
+
+ // Catering request
+ curl -vvv -X POST https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/caterings -d '{ "catering": {
+  "name":"Ram",
+  "email": "ramkygudla@gmail.com",
+  "phoneNumber": "+919000143956",
+  "description": "Catering req1"
+  }
+  }'
