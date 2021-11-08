@@ -1,8 +1,8 @@
 {
   "Template": {
     "TemplateName": "MyTemplate",
-    "SubjectPart": "Order Confirmed.",
-    "TextPart": "Dear {{name}},\r\nYour transaction id is: {{transactionId}}.",
-    "HtmlPart": "<h1>Hello {{name}}</h1><p>Your order is placed successfully. Transaction id: {{transactionId}}. Total amount: {{amount}}</p>"
+    "SubjectPart": "Email from Aha Curry Point",
+    "TextPart": "{{#if catering}}<h1>Hello {{catering.name}}</h1><p>You have indicated that you are interested in receiving catering information. We will reach you shortly on your mobile number {{catering.phoneNumber}}</p>{{else}}<h1>Hello {{order.name}}</h1><p>Your order is placed successfully. Transaction id: {{order.transactionId}}. Total amount: {{order.amount}}</p>{{/if}}",
+    "HtmlPart": "{{#if catering}}<h1>Hello {{catering.name}}</h1><p>You have indicated that you are interested in receiving catering information. We will reach you shortly on your mobile number {{catering.phoneNumber}}</p>{{else}}<h1>Hello {{order.name}}</h1><p>Your order is placed successfully. Transaction id: {{order.transactionId}}. Total amount: {{order.amount}}</p>{{/if}}"
   }
 }
