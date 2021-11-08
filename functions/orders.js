@@ -4,7 +4,6 @@ const utils = require('./utils');
 const ORDERS_TABLE_NAME = process.env.ORDERS_TABLE_NAME;
 
 function handleGet(event, callback) {
-  // documentClient
   if (event.pathParameters && event.pathParameters.phoneNumber && event.pathParameters.transactionId) {
     let getParams = {
         TableName: ORDERS_TABLE_NAME,
@@ -23,7 +22,7 @@ function handleGet(event, callback) {
      console.log('Retrieved Item successfully.', data);
      let message = {
        statusCode: 200,
-       item: JSON.stringify(data.Item),
+       item: data.Item
      };
      response = utils.generateResponse(200, message);
      callback(null, response);
@@ -65,7 +64,7 @@ function handleGet(event, callback) {
    console.log('Retrieved Items successfully.', data);
    let message = {
      statusCode: 200,
-     items: JSON.stringify(data.Items),
+     items: data.Items
    };
    response = utils.generateResponse(200, message);
    callback(null, response);
@@ -82,6 +81,10 @@ function handleGet(event, callback) {
 
 function handlePost(event, callback) {
   const requestBody = JSON.parse(event.body);
+  if (event.resource === '/api/v1/caterings') {
+    notifyCateringRequest(requestBody, callback);
+  }
+
   var updateParams = {
         TableName:ORDERS_TABLE_NAME,
         Key:{
@@ -93,16 +96,16 @@ function handlePost(event, callback) {
             "#st": "status",
         },
         ExpressionAttributeValues:{
-            ":st": requestBody.order.status
+            ":st": requestBody.attributes.status
         },
         ReturnValues:"UPDATED_NEW"
     };
 
   utils.updateItem(updateParams).then((data) => {
-   console.log('Updated Item successfully. New Item: ', data);
+   console.log('Updated Item successfully. Updated Attributes: ', data);
    let message = {
      statusCode: 200,
-     item: JSON.stringify(data.Items),
+     message: `Item is updated successfully. Updated Attributes: ${JSON.stringify(data)}`
    };
    response = utils.generateResponse(200, message);
    callback(null, response);
@@ -115,6 +118,77 @@ function handlePost(event, callback) {
     callback(null, response);
   });
 
+}
+
+function notifyCateringRequest(req, callback) {
+  // send SMS
+  const smsParams = {
+    Message: `Dear ${req.catering.name}, \r\nYour catering request has been taken. We will reach you shortly on your mobile number: ${req.catering.phoneNumber}`,
+    PhoneNumber: req.catering.phoneNumber
+  }
+
+  utils.sendSMS(smsParams).then((data) => {
+    console.log('Message sent successfully.', data);
+  }, (ex) => {
+     console.log('Error in sending Message.');
+     console.dir(ex.message);
+  });
+
+  // send Email
+ const emailTemplateData = JSON.stringify(
+  {
+       catering: {
+           name: req.catering.name,
+           phoneNumber: req.catering.phoneNumber,
+           email: req.catering.email,
+           description: req.catering.description
+       }
+  })
+
+  const defaultTemplateData = JSON.stringify(
+   {
+        catering: {
+            name: "unknown",
+            phoneNumber: "unknown",
+            email: "unknown",
+            description: "unknown"
+        }
+   })
+
+ const emailParams = {
+       Destinations: [/* required */
+                {
+                   Destination: {
+                      ToAddresses: [
+                                     req.catering.email
+                                   ],
+                      CcAddresses: [
+                                     req.catering.email
+                                   ]
+                   },
+                   ReplacementTemplateData: emailTemplateData
+                 },
+              /* more items */
+      ],
+     Source: `Superior Foods <${req.catering.email}>`, /* required */
+     Template: 'MyTemplate', /* required */
+     DefaultTemplateData: defaultTemplateData
+  };
+  console.log(JSON.stringify(emailParams))
+  utils.sendEmail(emailParams).then((data) => {
+    console.log('Email sent successfully.', data);
+  }, (ex) => {
+     console.log('Error in sending email.');
+     console.dir(ex.message);
+  });
+
+  console.log('Your catering request has been taken.');
+  let message = {
+    statusCode: 200,
+    message: `Dear ${req.catering.name}, \r\nYour catering request has been taken. We will reach you shortly on your mobile number: ${req.catering.phoneNumber}`
+  };
+  response = utils.generateResponse(200, message);
+  callback(null, response);
 }
 
 module.exports.handler = (event, context, callback) => {

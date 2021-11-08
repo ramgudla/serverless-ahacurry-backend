@@ -24,7 +24,7 @@ module.exports.handler = (event, context, callback) => {
    console.log('Retrieved Item successfully.', data);
    let message = {
      statusCode: 200,
-     item: JSON.stringify(data.Item),
+     item: data.Item
    };
    response = utils.generateResponse(200, message);
    callback(null, response);

@@ -35,11 +35,24 @@ module.exports.handler = async (event) => {
   });
 
   // send Email
- const emailTemplateData = JSON.stringify({
+ const emailTemplateData = JSON.stringify(
+ {
+   order: {
      name: order.shipping.name,
      transactionId: order.transactionId,
      amount: order.grandTotal
+   }
  })
+
+ const defaultTemplateData = JSON.stringify(
+ {
+   order: {
+     name: "unknown",
+     transactionId: "unknown",
+     amount: "unknown"
+   }
+ })
+
  const emailParams = {
        Destinations: [/* required */
                 {
@@ -57,7 +70,7 @@ module.exports.handler = async (event) => {
       ],
      Source: `Superior Foods <${order.email}>`, /* required */
      Template: 'MyTemplate', /* required */
-     DefaultTemplateData: "{ \"name\":\"unknown\", \"transactionId\":\"unknown\", \"amount\":\"unknown\"  }"
+     DefaultTemplateData: defaultTemplateData
   };
   await utils.sendEmail(emailParams).then(() => {
     console.log('Email sent successfully.');
