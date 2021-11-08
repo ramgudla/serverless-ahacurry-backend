@@ -1,0 +1,6 @@
+// -----------------------------------------
+// Create the document client interface for DynamoDB
+// https://medium.com/@_bengarrison/javascript-es8-introducing-async-await-functions-7a471ec7de8a
+// https://www.hacksparrow.com/nodejs/exports-vs-module-exports.html
+// aws ses create-template --cli-input-json file:////Users/ramgudla/Desktop/Bugs/serverless-ahacurry-backend/mytemplate.json
+// aws ses update-template --cli-input-json file:////Users/ramgudla/Desktop/Bugs/serverless-ahacurry-backend/mytemplate.json
