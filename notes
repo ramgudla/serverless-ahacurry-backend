@@ -13,8 +13,10 @@ endpoints:
   POST - https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders/{phoneNumber}/{transactionId}
   POST - https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/caterings
 
+  https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders?status=New
+
   // Update order
-  $ curl -vvv -X POST https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders/+919000143956/ch_3JsotASBJknLCmry1sSKUat9 -d '{
+  curl -vvv -X POST https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders/+919000143956/ch_3JsotASBJknLCmry1sSKUat9 -d '{
        "attributes":{
           "status":"Completed"
        }
@@ -28,3 +30,36 @@ endpoints:
   "description": "Catering req1"
   }
   }'
+
+// Charge amount
+curl -vvv https://7d632zi9nb.execute-api.us-east-2.amazonaws.com/dev/api/v1/orders -d '{ "order" : {
+      "phoneNumber": "+919000143956",
+      "email": "ramkygudla@gmail.com",
+      "name": "Ram",
+      "transactionId": "pgwguid",
+      "date": "yyyymmdd",
+      "status": "Order Placed",
+      "deliveryMethod": "COD",
+      "grandTotal": 29.75,
+      "items": [{
+          "id": 1,
+          "categoryId": 1,
+          "preparationTime": 10,
+          "unitPrice": 4.25,
+          "variant": "Small",
+          "quantity": 7,
+          "name": "Strawberry and Vanilla Cake"
+      }],
+      "shipping": {
+        "name": "ram",
+        "address": {
+            "line1": "KN",
+            "city": "Hyd",
+            "state": "AP",
+            "country": "AU",
+            "postal_code": "532001"
+        }
+      },
+      "notes": "If I am not available, hand it over to my neighbour"
+  }
+}'

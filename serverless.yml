@@ -79,6 +79,10 @@ functions:
           method: get
           cors: true
       - http:
+          path: api/v1/orders
+          method: post
+          cors: true
+      - http:
           path: api/v1/orders/{phoneNumber}/{transactionId}
           method: get
           cors: true
