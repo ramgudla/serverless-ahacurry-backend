@@ -72,8 +72,8 @@ module.exports.handler = async (event) => {
      Template: 'MyTemplate', /* required */
      DefaultTemplateData: defaultTemplateData
   };
-  await utils.sendEmail(emailParams).then(() => {
-    console.log('Email sent successfully.');
+  await utils.sendEmail(emailParams).then((data) => {
+    console.log('Email sent successfully.', data);
   }, (ex) => {
      console.log('Error in sending email.');
      console.dir(ex.message);

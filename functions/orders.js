@@ -3,40 +3,124 @@ const utils = require('./utils');
 
 const ORDERS_TABLE_NAME = process.env.ORDERS_TABLE_NAME;
 
-function handleGet(event, callback) {
+const handleGet = (event, callback) => {
   if (event.pathParameters && event.pathParameters.phoneNumber && event.pathParameters.transactionId) {
-    let getParams = {
-        TableName: ORDERS_TABLE_NAME,
-        Key: {
-         phoneNumber: event.pathParameters.phoneNumber,
-         transactionId: event.pathParameters.transactionId
+    return getOrder(event, callback);
+  }
+  return getOrders(event, callback);
+
+}
+
+const handlePost = (event, callback) => {
+  if (event.resource === '/api/v1/caterings') {
+    return notifyCateringRequest(event, callback);
+  }
+  if (event.resource === '/api/v1/orders') {
+    return insertOrder(event, callback);
+  }
+  return updateOrder(event, callback);
+
+}
+
+const insertOrder = (event, callback) => {
+  const requestBody = JSON.parse(event.body);
+  const order = requestBody.order;
+  // place order
+  var ddParams = {
+    TableName: ORDERS_TABLE_NAME,
+    Item: order
+  };
+  utils.putItem(ddParams).then((data) => {
+    console.log('Order placed successfully.', data);
+    let message = {
+      statusCode: 200,
+      message: `Your order request has been taken.`
+    };
+    response = utils.generateResponse(200, message);
+    callback(null, response);
+  }, (ex) => {
+     console.log('Error in placing order.');
+     console.dir(ex.message);
+     let message = {
+       message: ex.message
+     };
+     response = utils.generateResponse(500, message);
+     callback(null, response);
+  });
+  
+}
+
+const updateOrder = (event, callback) => {
+  const requestBody = JSON.parse(event.body);
+  var updateParams = {
+        TableName:ORDERS_TABLE_NAME,
+        Key:{
+            "phoneNumber": event.pathParameters.phoneNumber,
+            "transactionId": event.pathParameters.transactionId
         },
-        ProjectionExpression: "#n, phoneNumber, transactionId, grandTotal, #orders",
+        UpdateExpression: "set #st = :st",
         ExpressionAttributeNames:{
-            "#n": "name",
-            "#orders": "items"
-        }
+            "#st": "status",
+        },
+        ExpressionAttributeValues:{
+            ":st": requestBody.attributes.status
+        },
+        ReturnValues:"UPDATED_NEW"
     };
 
-    utils.getItem(getParams).then((data) => {
-     console.log('Retrieved Item successfully.', data);
-     let message = {
-       statusCode: 200,
-       item: data.Item
-     };
-     response = utils.generateResponse(200, message);
-     callback(null, response);
-    }, (ex) => {
-      console.log(ex);
-      let message = {
-        message: ex.message
-      };
-      response = utils.generateResponse(500, message);
-      callback(null, response);
-    });
+  utils.updateItem(updateParams).then((data) => {
+   console.log('Updated Item successfully. Updated Attributes: ', data);
+   let message = {
+     statusCode: 200,
+     message: `Item is updated successfully. Updated Attributes: ${JSON.stringify(data)}`
+   };
+   response = utils.generateResponse(200, message);
+   callback(null, response);
+  }, (ex) => {
+    console.log(ex);
+    let message = {
+      message: ex.message
+    };
+    response = utils.generateResponse(500, message);
+    callback(null, response);
+  });
 
-  }
+}
 
+const getOrder = (event, callback) => {
+  let getParams = {
+      TableName: ORDERS_TABLE_NAME,
+      Key: {
+       phoneNumber: event.pathParameters.phoneNumber,
+       transactionId: event.pathParameters.transactionId
+      },
+      ProjectionExpression: "#n, phoneNumber, transactionId, grandTotal, #orders",
+      ExpressionAttributeNames:{
+          "#n": "name",
+          "#orders": "items"
+      }
+  };
+
+  utils.getItem(getParams).then((data) => {
+   console.log('Retrieved Item successfully.', data);
+   let message = {
+     statusCode: 200,
+     item: data.Item
+   };
+   response = utils.generateResponse(200, message);
+   callback(null, response);
+  }, (ex) => {
+    console.log(ex);
+    let message = {
+      message: ex.message
+    };
+    response = utils.generateResponse(500, message);
+    callback(null, response);
+  });
+
+}
+
+const getOrders = (event, callback) => {
   let scanParams = event.queryStringParameters ? {
     TableName : ORDERS_TABLE_NAME,
     ProjectionExpression: "#n, phoneNumber, transactionId, grandTotal, #orders",
@@ -79,52 +163,12 @@ function handleGet(event, callback) {
 
 }
 
-function handlePost(event, callback) {
+const notifyCateringRequest = (event, callback) => {
   const requestBody = JSON.parse(event.body);
-  if (event.resource === '/api/v1/caterings') {
-    notifyCateringRequest(requestBody, callback);
-  }
-
-  var updateParams = {
-        TableName:ORDERS_TABLE_NAME,
-        Key:{
-            "phoneNumber": event.pathParameters.phoneNumber,
-            "transactionId": event.pathParameters.transactionId
-        },
-        UpdateExpression: "set #st = :st",
-        ExpressionAttributeNames:{
-            "#st": "status",
-        },
-        ExpressionAttributeValues:{
-            ":st": requestBody.attributes.status
-        },
-        ReturnValues:"UPDATED_NEW"
-    };
-
-  utils.updateItem(updateParams).then((data) => {
-   console.log('Updated Item successfully. Updated Attributes: ', data);
-   let message = {
-     statusCode: 200,
-     message: `Item is updated successfully. Updated Attributes: ${JSON.stringify(data)}`
-   };
-   response = utils.generateResponse(200, message);
-   callback(null, response);
-  }, (ex) => {
-    console.log(ex);
-    let message = {
-      message: ex.message
-    };
-    response = utils.generateResponse(500, message);
-    callback(null, response);
-  });
-
-}
-
-function notifyCateringRequest(req, callback) {
   // send SMS
   const smsParams = {
-    Message: `Dear ${req.catering.name}, \r\nYour catering request has been taken. We will reach you shortly on your mobile number: ${req.catering.phoneNumber}`,
-    PhoneNumber: req.catering.phoneNumber
+    Message: `Dear ${requestBody.catering.name}, \r\nYour catering request has been taken. We will reach you shortly on your mobile number: ${requestBody.catering.phoneNumber}`,
+    PhoneNumber: requestBody.catering.phoneNumber
   }
 
   utils.sendSMS(smsParams).then((data) => {
@@ -138,10 +182,10 @@ function notifyCateringRequest(req, callback) {
  const emailTemplateData = JSON.stringify(
   {
        catering: {
-           name: req.catering.name,
-           phoneNumber: req.catering.phoneNumber,
-           email: req.catering.email,
-           description: req.catering.description
+           name: requestBody.catering.name,
+           phoneNumber: requestBody.catering.phoneNumber,
+           email: requestBody.catering.email,
+           description: requestBody.catering.description
        }
   })
 
@@ -160,17 +204,17 @@ function notifyCateringRequest(req, callback) {
                 {
                    Destination: {
                       ToAddresses: [
-                                     req.catering.email
+                                     requestBody.catering.email
                                    ],
                       CcAddresses: [
-                                     req.catering.email
+                                     requestBody.catering.email
                                    ]
                    },
                    ReplacementTemplateData: emailTemplateData
                  },
               /* more items */
       ],
-     Source: `Superior Foods <${req.catering.email}>`, /* required */
+     Source: `Superior Foods <${requestBody.catering.email}>`, /* required */
      Template: 'MyTemplate', /* required */
      DefaultTemplateData: defaultTemplateData
   };
@@ -189,6 +233,7 @@ function notifyCateringRequest(req, callback) {
   };
   response = utils.generateResponse(200, message);
   callback(null, response);
+
 }
 
 module.exports.handler = (event, context, callback) => {
