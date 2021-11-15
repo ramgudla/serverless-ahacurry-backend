@@ -47,7 +47,7 @@ const insertOrder = (event, callback) => {
      response = utils.generateResponse(500, message);
      callback(null, response);
   });
-  
+
 }
 
 const updateOrder = (event, callback) => {
@@ -155,7 +155,7 @@ const getOrders = (event, callback) => {
   }, (ex) => {
     console.log(ex);
     let message = {
-      message: ex.message
+      message: `${ex.message}. Only 'status=[New, InProgress, Completed]' query parameter is valid.`
     };
     response = utils.generateResponse(500, message);
     callback(null, response);
@@ -229,7 +229,7 @@ const notifyCateringRequest = (event, callback) => {
   console.log('Your catering request has been taken.');
   let message = {
     statusCode: 200,
-    message: `Dear ${req.catering.name}, \r\nYour catering request has been taken. We will reach you shortly on your mobile number: ${req.catering.phoneNumber}`
+    message: `Dear ${requestBody.catering.name}, Your catering request has been taken. We will reach you shortly on your mobile number: ${requestBody.catering.phoneNumber}`
   };
   response = utils.generateResponse(200, message);
   callback(null, response);
